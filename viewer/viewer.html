@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+<head>
+<meta charset="UTF-8">
+<title>2Nice Viewer</title>
+<style>
+  #graph-container {
+    width: 100%;
+    border: 2px solid #d9d9d9;
+    background: #fff;
+  }
+</style>
+
+<link rel="shortcut icon" type="image/ico" href="favicon.ico"/>
+
+<script src="jquery/jquery-2.1.1.min.js"></script>
+<script src="sigmajs/sigma.min.js"></script>
+<script src="sigmajs/plugins/sigma.layout.forceAtlas2.min.js"></script>
+<script src="sigmajs/plugins/sigma.plugins.dragNodes.min.js"></script>
+<script src="sigmajs/plugins/sigma.renderers.edgeLabels.min.js"></script>
+<script src="uglifyjs/uglify.js"></script>
+<script src="viewer.js"></script>
+
+
+<link rel="stylesheet" href="tabs.css">
+
+
+<link rel="stylesheet" type="text/css" href="css/Abel_font.css">
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Abel">
+<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Source+Code+Pro">
+
+<!--<link rel="stylesheet" type="text/css" href="css/DINWeb_font.css">-->
+<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" />
+<link type="text/css" rel="stylesheet" href="css/jquery.dropdown.css" />
+<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" />
+<script src="js/codemirror.js"></script>
+<link rel="stylesheet" href="css/codemirror.css">
+<script src="js/javascript.js"></script>
+
+
+<script>
+    $(function() {
+            // $('a[href*=#]:not([href=#])').click(function() {
+        $('.navigation').click(function() {
+
+            if (location.pathname.replace(/^\//,'') == this.pathname.replace(/^\//,'') && location.hostname == this.hostname) {
+
+                var target = $(this.hash);
+                target = target.length ? target : $('[name=' + this.hash.slice(1) +']');
+                if (target.length) {
+                    $('html,body').animate({
+                        scrollTop: target.offset().top - 50
+                    }, 1000);
+                    return false;
+                }
+            }
+        });
+    });
+</script>
+
+</head>
+<body>
+
+<div id="header_wrapper">
+    <div id="header" class='content_wrapper'>
+        <div id="nav">
+            <div class='srl'>
+					<span class="main_logo">
+					<a href="http://www.srl.inf.ethz.ch" target="_blank"><img id="srl_logo" src="img/2nice.png"></a>
+					</span>
+					<span class='tagline'>
+						<span class='large_screen'>
+							Learning and Inference Framework for Structured Prediction
+						</span>
+					</span>
+            </div>
+            <ul class="clearfix">
+                <li class="selected"><a class="navigation" href="#home"><b>Home</b></a></li>
+                <li class=""><a class="navigation" href="#try-online"><b>Try Online</b></a></li>
+                <!--<li><a href="#" id="about"><b>About</b></a></li>-->
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="home" class="welcome">
+
+    <div  style="float: left; margin-left:20px; margin-top: 70px;">
+
+        <div class="sharebox">
+            <a href="http://twitter.com/share" class="twitter-share-button"  data-text="EventRacer" data-via="">Tweet</a>
+        </div>
+        <div class="sharebox">
+            <div class="g-plusone" data-size="medium"></div>
+        </div>
+        <div class="sharebox" style="margin-right: 30px;">
+            <div class="fb-like" data-href="http://www.eventracer.org/android" data-width="120" data-layout="button_count" data-action="like" data-show-faces="true" data-share="false"></div>
+        </div>
+
+    </div>
+
+    </br>
+    <div class="post" >
+        <h3>What is 2 Nice?</h3>
+        <p class="highlight">
+        2 Nice is an open-source framework providing state-of-the-art machine learning techniques for structured prediction.
+            It provides an efficient, scalable and parallel implementation that learns from massive amounts of data.
+            To find out more <a class="navigation" href="#try-online">try the online demo</a>, read the <a>tutorial</a> or explore the <a href="https://github.com/eth-srl/2Nice" target="_blank">GitHub repository</a>.
+        </p>
+
+    </div>
+
+    <div class="tiled-bg" style="margin-top: -20px;">
+        <img title="2 Nice framework overview" alt="2 Nice framework overview" src="img/architecture.png" style="height: 340px;"></img>
+    </div>
+
+
+
+    <div class="post" style="margin-top: 10px;">
+        <!--<h3>Open Source</h3>-->
+        <!--<div class="three_cols clearfix">-->
+
+            <div class="two_col1">
+                <!--<h4>UnuglifyJS</h4>-->
+                <a href="https://github.com/eth-srl/UnuglifyJS" target="_blank">
+                    <img class="icon" src="img/github_logo.png" title="GitHub" alt="GitHub" />
+                </a>
+                <p>Sample client for </br>JavaScript name prediction</p>
+            </div>
+
+            <div class="two_col2">
+                <!--<h4>2 Nice</h4>-->
+                <a href="https://github.com/eth-srl/2Nice" target="_blank">
+                    <img class="icon clearfix" src="img/github_logo.png" title="GitHub" alt="GitHub" />
+                </a>
+            </div>
+
+        <!--</div>-->
+    </div>
+</div>
+
+<div class="welcome-footer">
+    <a class="navigation" href="#try-online"><h3 style="margin: 10px 0px;">Try Online</h3><img src="img/down_arrow.png" style="width: 32px;"/> </a>
+</div>
+
+<div id="dropdown-2" class="dropdown dropdown-tip">
+      <ul class="dropdown-menu" id="rename-items">
+        <li><a href="#">x</a></li>
+        <li><a href="#">y</a></li>
+      </ul>
+  </div>
+
+<div class="container" id="try-online">
+    <div class="content_wrapper" id="tool">
+        <div class='clearfix app_section'>
+
+            <div class='input_col'>
+
+                <ul id="tabs-left" class="htabs">
+                    <li><a href="#" name="#tab1">Input</a></li>
+                    <li><a href="#" name="#tab2">Extracted Features</a></li>
+                </ul>
+
+                <div id="content-left">
+                    <div id="tab1">
+                        <div class='input_header clearfix'>
+                            <h5>
+                                <!--<div class='large_screen title'>Step 1</div> - Enter Input (JavaScript)-->
+                            </h5>
+                            <input type="button" class="submit-button" id="extract-features"
+                                   value="&nbsp;&nbsp;Extract Features&nbsp;&nbsp;"/>
+                        </div>
+
+                    <div class="intro_slide info">
+                        Put your JavaScript here that you want to deminify. We will rename variables and parameters to names that we learn from thousands of open source projects.
+                        To proceed to next step click the 'extract features' button.
+                        Note that for this demo to work you need to train the statistical model first and have a running instance of 2Nice server.
+                        Please refer to the documentation in <a href="https://github.com/eth-srl/2Nice" target="_blank">2Nice</a> and <a href="https://github.com/eth-srl/UnuglifyJS" target="_blank">UnuglifyJS</a> for more information.
+                    </div>
+
+                    <textarea rows="16" cols="120" id="js-text" class='input_section '>
+function chunkData(e, t) {
+  var n = [];
+  var r = e.length;
+  var i = 0;
+  for (; i < r; i += t) {
+    if (i + t < r) {
+      n.push(e.substring(i, i + t));
+    } else {
+      n.push(e.substring(i, r));
+    }
+  }
+  return n;
+}                   </textarea>
+                    </div>
+
+                    <div id="tab2">
+                        <div class='input_header clearfix'>
+                            <h5>
+                                <!--<div class='large_screen title'>Step 2</div> - Extract Properties and Features-->
+                            </h5>
+
+                            <input type="button" class="submit-button" id="get-graph"
+                                   value="&nbsp;&nbsp;Produce Graph&nbsp;&nbsp;"/>
+                        </div>
+
+                        <div class="intro_slide info">
+                            UnuglifyJS client is used to extract properties and features from the JavaScript program. The results are represented in a JSON format which the 2Nice server can process.
+                            The JSON consists of two parts 'query' describing the features and 'assign' describing the properties and their initial assignments with the attribute 'giv' or 'inf' for known and unknown properties respectively.
+                            For example, the feature {"a": 0,	"b": 1,	"f2": ":VarDef:"} defines a relation between unknown property {"v": 0,	"inf": "r"} and known property {"v": 1,	"giv": "length"} extracted from the code snippet 'var r = e.length;'.
+                        </div>
+
+                        <textarea rows="16" cols="120" id="query-text" class='input_section '></textarea>
+                    </div>
+
+                </div>
+            </div>
+            <div class='results_col'>
+
+                <ul id="tabs-right" class="htabs">
+                    <li><a href="#" name="#tab3">Computed Predictions</a></li>
+                    <li><a href="#" name="#tab4">Output</a></li>
+                </ul>
+
+                <div id="content-right">
+
+                    <div id="tab3">
+                        <div class='input_header clearfix'>
+                        <h5><span id="resultslabel"></span>
+                            <!--<div class='large_screen title'>Step 3</div> - Find the Best Assignment-->
+                        </h5>
+                            <input type="button" class="submit-button" id="produce-outputjs"
+                                   value="&nbsp;&nbsp;Generate Output&nbsp;&nbsp;"/>
+                        </div>
+
+                        <div class="intro_slide info">
+                            The extracted properties and features and sent to the 2Nice server for MAP inference which calculates the most likely assignment of unknown properties.
+                            Results are visualized in the graph (Conditional Random Field) below where the known properties are red nodes, unknown properties are blue nodes and the edges are features.
+                            Edge labels show the feature name together with the score of the best assignment (higher score is better).
+                            Features with score 0 are those not seen in the training data (this happens for example with features relating function name to variables).
+                        </div>
+
+                        <div id="graph-container" class="CodeMirror input_section"></div>
+                    </div>
+
+                    <div id="tab4">
+                        <div class='input_header clearfix'>
+                            <h5>
+                                <!--<span id="resultslabel">Step 4 - Renamed JavaScript</span>-->
+                            </h5>
+                        </div>
+
+                        <div class="intro_slide info">
+                            In the last step we simply take the best labels computed from MAP inference and use them to replace the corresponding variables in the original JavaScript program.
+                        </div>
+
+                        <textarea rows="16" cols="120" id="outputjs" readonly="" class='input_section'></textarea>
+                    </div>
+
+
+
+                </div>
+
+                <div class='intro_area_overlay' id='intro_area_overlay'>
+                    <div class='intro_area' >
+                        <div class='input_header clearfix'><h5>Welcome to UnuglifyJS</h5>
+                        </div>
+                        <div class="intro_slide">
+                            Welcome to a sample client of the <a href="https://github.com/eth-srl/2Nice" target="_blank">2Nice</a> framework called <a href="https://github.com/eth-srl/UnuglifyJS" target="_blank">UnuglifyJS</a> — a JavaScript deminifier implementation
+                            which extracts properties and features as described in <a href="http://www.srl.inf.ethz.ch/jsnice" target="_blank">JSNice</a>.
+                            The UnuglifyJS client takes as an input JavaScript program with minified names and is responsible for:
+
+                            <ul>
+                                <li>defining <i>known</i> and <i>unknown properties</i>. The known properties are program constants, objects properties, methods and global variables
+                                    – that is, program parts which cannot be (soundly) renamed (e.g. the DOM APIs). The unknown properties are all local variables</li>
+                                <li>defining <i>features</i> that relate properties. As an example feature is (r, length) - VarDef, which captures the fact that definition of
+                                    variable r appears together with accessing attribute length in the code snippet 'var r = e.length;'</li>
+                            </ul>
+
+                            Given the extracted properties and features, we use <a href="https://github.com/eth-srl/2Nice" target="_blank">2Nice</a> framework to train a statistical model and to answer subsequent MAP inference queries (i.e., finding the best assignment of labels to properties).
+                            </br></br>
+                            The whole process of name prediction is illustrated in four steps. To start, provide an input JavaScript or use the default one provided.
+                            The relevant JavaScript functionality implementing calling the server and the UnunglifyJS client can be found at the end of file <a href="js/global.js" target="_blank">js/global.js</a>.
+                            </br></br>
+                            <div>
+                                By using this service you warrant that all your entries are in your sole responsibility and do not infringe any laws or third-party rights like copyrights and the like. ETH and its employees cannot be held liable in any way.
+                                Click to <a href="https://github.com/eth-srl/2Nice" target="_blank">learn more about 2Nice and the terms and conditions of use</a> (disclaimer).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+//http://red-team-design.com/google-play-minimal-tabs-with-css3-jquery/
+function resetTabs(id){
+    $("#content-" + id + " > div").hide(); //Hide all content
+    $("#tabs-" + id + " a").attr("id",""); //Reset id's      
+}
+
+var myUrl = window.location.href; //get URL
+var myUrlTab = myUrl.substring(myUrl.indexOf("#")); // For mywebsite.com/tabs.html#tab2, myUrlTab = #tab2     
+var myUrlTabName = myUrlTab.substring(0,4); // For the above example, myUrlTabName = #tab
+
+var init_tabs = function(id){
+    $("#content-" + id + " > div").hide(); // Initially hide all content
+    $("#tabs-" + id + " li:first a").attr("id","current"); // Activate first tab
+    $("#content-" + id + " > div:first").fadeIn(); // Show first tab content
+    
+    $("#tabs-" + id + " a").on("click",function(e) {
+        e.preventDefault();
+        if ($(this).attr("id") == "current"){ //detection for current tab
+            return;
+        }
+        else{             
+            resetTabs(id);
+            $(this).attr("id","current"); // Activate this
+            $($(this).attr('name')).fadeIn(); // Show content for current tab
+        }
+    });
+
+    for (i = 1; i <= $("#tabs-" + id + " li").length; i++) {
+      if (myUrlTab == myUrlTabName + i) {
+          resetTabs();
+          $("a[name='"+myUrlTab+"']").attr("id","current"); // Activate url tab
+          $(myUrlTab).fadeIn(); // Show url tab content        
+      }
+    }
+};
+
+init_tabs("left");
+init_tabs("right");
+
+</script>
+
+  <div id="footer" class='content_wrapper'>
+    <p>&copy; <a href="http://www.srl.inf.ethz.ch" target="_blank">Software Reliability Lab</a>, <a href="http://www.inf.ethz.ch" target="_blank">Computer Science Department</a>, <a href="http://www.ethz.ch/index_EN" target="_blank">ETH Zurich</a></p>
+  </div>
+
+<script src="js/jquery.nav.js"></script>
+  <script src="js/global.js"></script>
+  <script src="js/jquery.dropdown.min.js"></script>
+
+
+</body>
+</html>
