@@ -158,6 +158,10 @@ void TestInference(RecordInput* input, GraphInference* inference) {
 }
 
 void Train(RecordInput* input, GraphInference* inference) {
+
+  std::ofstream outfile("Training_log.txt");
+  outfile << "Pass" << '\t' << "Learning rate" << '\t' << "Error rate" << std::endl;
+  
   inference->SSVMInit(FLAGS_regularization_const, FLAGS_svm_margin);
   double learning_rate = FLAGS_start_learning_rate;
   LOG(INFO) << "Starting training with --start_learning_rate=" << std::fixed << FLAGS_start_learning_rate
@@ -178,12 +182,18 @@ void Train(RecordInput* input, GraphInference* inference) {
       a->FromJSON(assign);
       inference->SSVMLearn(q.get(), a.get(), learning_rate, &stats);
     });
+
+    //inference->PrintDebugInfo();
+
     int64 end_time = GetCurrentTimeMicros();
     LOG(INFO) << "Training pass took " << (end_time - start_time) / 1000 << "ms.";
 
     LOG(INFO) << "Correct " << stats.correct_labels << " vs " << stats.incorrect_labels << " incorrect labels.";
     error_rate = stats.incorrect_labels / (static_cast<double>(stats.incorrect_labels + stats.correct_labels));
     LOG(INFO) << "Pass " << pass << " with learning rate " << learning_rate << " has error rate of " << std::fixed << error_rate;
+
+    outfile <<  pass << '\t' << std::fixed << learning_rate << '\t' << std::fixed << error_rate << std::endl;
+
     if (error_rate > last_error_rate) {
       LOG(INFO) << "Reverting last pass.";
       learning_rate *= 0.5;  // Halve the learning rate.
@@ -194,6 +204,7 @@ void Train(RecordInput* input, GraphInference* inference) {
     }
     inference->PrepareForInference();
   }
+  outfile.close();
 }
 
 
