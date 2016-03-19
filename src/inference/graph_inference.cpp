@@ -966,6 +966,7 @@ void GraphInference::SaveModel(const std::string& file_prefix) {
   for (auto it = features_.begin(); it != features_.end(); ++it) {
     fwrite(&it->first, sizeof(GraphFeature), 1, ffile);
     double value = it->second.getValue();
+
     fwrite(&value, sizeof(double), 1, ffile);
   }
   fclose(ffile);

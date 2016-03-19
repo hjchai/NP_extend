@@ -157,9 +157,26 @@ void TestInference(RecordInput* input, GraphInference* inference) {
 
 }
 
-void Train(RecordInput* input, GraphInference* inference) {
+void Train(RecordInput* input, GraphInference* inference, int fold_id) {
 
-  std::ofstream outfile("Training_log.txt");
+  std::ofstream outfile;
+  if(fold_id == 0){
+	  outfile.open("log/Rate_per_pass_"+std::to_string(FLAGS_cross_validation_folds)
+  	  	  	  	  +"_"+std::to_string(FLAGS_start_learning_rate)
+  	  	  	  	  +"_"+std::to_string(FLAGS_regularization_const)
+  	  	  	  	  +"_"+std::to_string(FLAGS_svm_margin)
+  	  	  	  	  +"_log.txt");
+	  outfile<< "learning_rate=" << std::fixed << FLAGS_start_learning_rate << ' '
+		      << "regularization_const=" << std::fixed << FLAGS_regularization_const << ' '
+		      << "svm_margin=" << std::fixed << FLAGS_svm_margin << std::endl;
+  }
+  else
+	  outfile.open("log/Rate_per_pass_"+std::to_string(FLAGS_cross_validation_folds)
+  	  	  	  	  +"_"+std::to_string(FLAGS_start_learning_rate)
+  	  	  	  	  +"_"+std::to_string(FLAGS_regularization_const)
+  	  	  	  	  +"_"+std::to_string(FLAGS_svm_margin)
+  	  	  	  	  +"_log.txt", std::ofstream::app);
+  outfile << "Fold: " << fold_id << std::endl;
   outfile << "Pass" << '\t' << "Learning rate" << '\t' << "Error rate" << std::endl;
   
   inference->SSVMInit(FLAGS_regularization_const, FLAGS_svm_margin);
@@ -207,7 +224,47 @@ void Train(RecordInput* input, GraphInference* inference) {
   outfile.close();
 }
 
+void Train(RecordInput* input, GraphInference* inference) {
 
+  inference->SSVMInit(FLAGS_regularization_const, FLAGS_svm_margin);
+  double learning_rate = FLAGS_start_learning_rate;
+  LOG(INFO) << "Starting training with --start_learning_rate=" << std::fixed << FLAGS_start_learning_rate
+      << ", --regularization_const=" << std::fixed << FLAGS_regularization_const
+      << " and --svm_margin=" << std::fixed << FLAGS_svm_margin;
+  double last_error_rate = 1.0;
+  for (int pass = 0; pass < FLAGS_num_training_passes; ++pass) {
+    double error_rate = 0.0;
+
+    GraphInference backup_inference(*inference);
+
+    int64 start_time = GetCurrentTimeMicros();
+    PrecisionStats stats;
+    ParallelForeachInput(input, [&inference,&stats,learning_rate](const Json::Value& query, const Json::Value& assign) {
+      std::unique_ptr<Nice2Query> q(inference->CreateQuery());
+      q->FromJSON(query);
+      std::unique_ptr<Nice2Assignment> a(inference->CreateAssignment(q.get()));
+      a->FromJSON(assign);
+      inference->SSVMLearn(q.get(), a.get(), learning_rate, &stats);
+    });
+
+    int64 end_time = GetCurrentTimeMicros();
+    LOG(INFO) << "Training pass took " << (end_time - start_time) / 1000 << "ms.";
+
+    LOG(INFO) << "Correct " << stats.correct_labels << " vs " << stats.incorrect_labels << " incorrect labels.";
+    error_rate = stats.incorrect_labels / (static_cast<double>(stats.incorrect_labels + stats.correct_labels));
+    LOG(INFO) << "Pass " << pass << " with learning rate " << learning_rate << " has error rate of " << std::fixed << error_rate;
+
+    if (error_rate > last_error_rate) {
+      LOG(INFO) << "Reverting last pass.";
+      learning_rate *= 0.5;  // Halve the learning rate.
+      *inference = backup_inference;
+      if (learning_rate < FLAGS_stop_learning_rate) break;  // Stop learning in this case.
+    } else {
+      last_error_rate = error_rate;
+    }
+    inference->PrepareForInference();
+  }
+}
 
 void PrintConfusion() {
   std::unique_ptr<RecordInput> input(new FileRecordInput(FLAGS_input));
@@ -228,7 +285,7 @@ void PrintConfusion() {
 }
 
 void Evaluate(RecordInput* evaluation_data, GraphInference* inference,
-    PrecisionStats* total_stats) {
+    PrecisionStats* total_stats, int fold_id) {
   int64 start_time = GetCurrentTimeMicros();
   PrecisionStats stats;
   ParallelForeachInput(evaluation_data, [&inference,&stats](const Json::Value& query, const Json::Value& assign) {
@@ -246,6 +303,42 @@ void Evaluate(RecordInput* evaluation_data, GraphInference* inference,
   int64 end_time = GetCurrentTimeMicros();
   LOG(INFO) << "Evaluation pass took " << (end_time - start_time) / 1000 << "ms.";
 
+
+  LOG(INFO) << "Correct " << stats.correct_labels << " vs " << stats.incorrect_labels << " incorrect labels";
+  double error_rate = stats.incorrect_labels / (static_cast<double>(stats.incorrect_labels + stats.correct_labels));
+  LOG(INFO) << "Error rate of " << std::fixed << error_rate;
+
+  std::ofstream outfile;
+  outfile.open("log/Rate_per_pass_"+std::to_string(FLAGS_cross_validation_folds)
+	  	  	  	  +"_"+std::to_string(FLAGS_start_learning_rate)
+	  	  	  	  +"_"+std::to_string(FLAGS_regularization_const)
+	  	  	  	  +"_"+std::to_string(FLAGS_svm_margin)
+	  	  	  	  +"_log.txt", std::ofstream::app);
+  outfile << "Correct " << stats.correct_labels << " vs " << stats.incorrect_labels << " incorrect labels" << std::endl;
+  outfile << "Error rate of " << std::fixed << error_rate << std::endl;
+  outfile << "========================================" << std::endl;
+  outfile.close();
+  total_stats->AddStats(stats);
+}
+
+void Evaluate(RecordInput* evaluation_data, GraphInference* inference,
+    PrecisionStats* total_stats) {
+  int64 start_time = GetCurrentTimeMicros();
+  PrecisionStats stats;
+  ParallelForeachInput(evaluation_data, [&inference,&stats](const Json::Value& query, const Json::Value& assign) {
+    std::unique_ptr<Nice2Query> q(inference->CreateQuery());
+    q->FromJSON(query);
+    std::unique_ptr<Nice2Assignment> a(inference->CreateAssignment(q.get()));
+    a->FromJSON(assign);
+    std::unique_ptr<Nice2Assignment> refa(inference->CreateAssignment(q.get()));
+    refa->FromJSON(assign);
+
+    a->ClearInferredAssignment();
+    inference->MapInference(q.get(), a.get());
+    a->CompareAssignments(refa.get(), &stats);
+  });
+  int64 end_time = GetCurrentTimeMicros();
+  LOG(INFO) << "Evaluation pass took " << (end_time - start_time) / 1000 << "ms.";
 
   LOG(INFO) << "Correct " << stats.correct_labels << " vs " << stats.incorrect_labels << " incorrect labels";
   double error_rate = stats.incorrect_labels / (static_cast<double>(stats.incorrect_labels + stats.correct_labels));
@@ -272,9 +365,9 @@ int main(int argc, char** argv) {
               fold_id, FLAGS_cross_validation_folds, false)));
       LOG(INFO) << "Training fold " << fold_id;
       InitTrain(training_data.get(), &inference);
-      Train(training_data.get(), &inference);
+      Train(training_data.get(), &inference, fold_id);
       LOG(INFO) << "Evaluating fold " << fold_id;
-      Evaluate(validation_data.get(), &inference, &total_stats);
+      Evaluate(validation_data.get(), &inference, &total_stats, fold_id);
     }
     // Output results of cross-validation (no model is saved in this mode).
     LOG(INFO) << "========================================";
@@ -282,6 +375,24 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Correct " << total_stats.correct_labels << " vs " << total_stats.incorrect_labels << " incorrect labels for the whole dataset";
     double error_rate = total_stats.incorrect_labels / (static_cast<double>(total_stats.incorrect_labels + total_stats.correct_labels));
     LOG(INFO) << "Error rate of " << std::fixed << error_rate;
+
+    std::ofstream outfile;
+	outfile.open("log/Rate_per_pass_"+std::to_string(FLAGS_cross_validation_folds)
+	  	  	  	  +"_"+std::to_string(FLAGS_start_learning_rate)
+	  	  	  	  +"_"+std::to_string(FLAGS_regularization_const)
+	  	  	  	  +"_"+std::to_string(FLAGS_svm_margin)
+	  	  	  	  +"_log.txt", std::ofstream::app);
+    outfile << "Cross-validation done" << std::endl;
+    outfile << "In total:" << std::endl;
+    outfile << "Correct " << total_stats.correct_labels << " vs " << total_stats.incorrect_labels << " incorrect labels for the whole dataset" << std::endl;
+    outfile << "Error rate of " << std::fixed << error_rate << std::endl;
+    outfile.close();
+
+    std::ofstream outfile1;
+    outfile1.open("log/bp_result.txt",std::ofstream::app);
+    outfile1 << std::fixed << error_rate << std::endl;
+    outfile1.close();
+
   } else if (FLAGS_print_confusion) {
     PrintConfusion();
   } else {
